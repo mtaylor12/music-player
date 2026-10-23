@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎵 SoundBox</title>
+  <style>
+    /* ============================================================
+       MAC SYSTEM 6 — BASE STYLES
+       Black & white, Chicago-style bitmap aesthetic
+       ============================================================ */
+    @import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:   #000000;
+      --white:   #FFFFFF;
+      --ltgray:  #CCCCCC;
+      --midgray: #999999;
+      --dkgray:  #555555;
+      --desktop: #AAAAAA;  /* classic Mac gray desktop pattern */
+    }
+
+    body {
+      background-color: var(--desktop);
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 1px,
+          rgba(255,255,255,0.35) 1px,
+          rgba(255,255,255,0.35) 2px
+        ),
+        repeating-linear-gradient(
+          90deg,
+          transparent,
+          transparent 1px,
+          rgba(255,255,255,0.35) 1px,
+          rgba(255,255,255,0.35) 2px
+        );
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      font-family: 'Chicago', 'Source Code Pro', 'Courier New', monospace;
+      font-size: 12px;
+      user-select: none;
+    }
+
+    /* ============================================================
+       MENU BAR
+       ============================================================ */
+    #menu-bar {
+      background: var(--white);
+      border-bottom: 1px solid var(--black);
+      height: 20px;
+      display: flex;
+      align-items: center;
+      padding: 0 6px;
+      gap: 0;
+      position: relative;
+      z-index: 100;
+    }
+
+    .menu-apple {
+      font-size: 14px;
+      padding: 0 8px;
+      cursor: default;
+      height: 100%;
+      display: flex;
+      align-items: center;
+    }
+    .menu-item {
+      padding: 0 8px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      cursor: default;
+      font-weight: 600;
+      font-size: 12px;
+    }
+    .menu-item:hover, .menu-apple:hover {
+      background: var(--black);
+      color: var(--white);
+    }
+
+    /* clock on right */
+    #menu-clock {
+      margin-left: auto;
+      font-size: 11px;
+      padding-right: 6px;
+    }
+
+    /* ============================================================
+       DESKTOP AREA
+       ============================================================ */
+    #desktop {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    /* ============================================================
+       MAC WINDOW
+       ============================================================ */
+    .mac-window {
+      background: var(--white);
+      border: 1px solid var(--black);
+      box-shadow: 2px 2px 0 var(--black);
+      width: 400px;
+      min-width: 320px;
+      cursor: default;
+      position: relative;
+    }
+
+    /* Title bar */
+    .mac-titlebar {
+      background: var(--white);
+      border-bottom: 1px solid var(--black);
+      height: 19px;
+      display: flex;
+      align-items: center;
+      padding: 0 4px;
+      gap: 4px;
+      cursor: move;
+      position: relative;
+    }
+
+    /* Stripes in title bar — classic Mac look */
+    .mac-titlebar::after {
+      content: '';
+      position: absolute;
+      left: 52px; right: 52px; top: 3px; bottom: 3px;
+      background-image: repeating-linear-gradient(
+        180deg,
+        var(--black) 0px, var(--black) 1px,
+        var(--white) 1px, var(--white) 2px
+      );
+      pointer-events: none;
+    }
+
+    .mac-close-box {
+      width: 11px; height: 11px;
+      border: 1px solid var(--black);
+      flex-shrink: 0;
+      cursor: pointer;
+      position: relative;
+      z-index: 1;
+      background: var(--white);
+    }
+    .mac-close-box:hover { background: var(--black); }
+
+    .mac-title {
+      font-weight: 600;
+      font-size: 12px;
+      text-align: center;
+      flex: 1;
+      position: relative;
+      z-index: 1;
+      background: var(--white);
+      padding: 0 6px;
+      white-space: nowrap;
+    }
+
+    .mac-zoom-box {
+      width: 11px; height: 11px;
+      border: 1px solid var(--black);
+      flex-shrink: 0;
+      cursor: pointer;
+      position: relative;
+      z-index: 1;
+      background: var(--white);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 8px; font-weight: bold;
+    }
+    .mac-zoom-box:hover { background: var(--black); color: var(--white); }
+
+    /* Window body */
+    .mac-body {
+      padding: 12px;
+    }
+
+    /* Resize handle */
+    .mac-resize {
+      position: absolute;
+      bottom: 0; right: 0;
+      width: 14px; height: 14px;
+      cursor: se-resize;
+      background-image:
+        linear-gradient(135deg, transparent 60%, var(--black) 60%, var(--black) 65%, transparent 65%),
+        linear-gradient(135deg, transparent 70%, var(--black) 70%, var(--black) 75%, transparent 75%),
+        linear-gradient(135deg, transparent 80%, var(--black) 80%, var(--black) 85%, transparent 85%);
+    }
+
+    /* ============================================================
+       MUSIC PLAYER INTERNALS
+       ============================================================ */
+
+    /* Album art area */
+    .player-art {
+      width: 100%;
+      height: 140px;
+      background: var(--ltgray);
+      border: 1px solid var(--black);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+      overflow: hidden;
+      position: relative;
+    }
+    .player-art img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    .player-art .art-placeholder {
+      font-size: 48px;
+      line-height: 1;
+    }
+
+    /* Track info */
+    .player-info {
+      border: 1px solid var(--black);
+      background: var(--white);
+      padding: 5px 8px;
+      margin-bottom: 10px;
+    }
+    .player-track-name {
+      font-weight: 600;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .player-artist {
+      font-size: 11px;
+      color: var(--dkgray);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .player-index {
+      font-size: 10px;
+      color: var(--midgray);
+      text-align: right;
+      margin-top: 2px;
+    }
+
+    /* Progress */
+    .player-progress-wrap {
+      margin-bottom: 4px;
+    }
+    .player-times {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--dkgray);
+      margin-bottom: 2px;
+    }
+
+    /* Mac-style slider — plain horizontal track */
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 12px;
+      background: transparent;
+      cursor: pointer;
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      height: 3px;
+      background: var(--black);
+      border: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 10px; height: 14px;
+      background: var(--white);
+      border: 1px solid var(--black);
+      margin-top: -5.5px;
+      cursor: pointer;
+    }
+    input[type=range]::-moz-range-track {
+      height: 3px;
+      background: var(--black);
+    }
+    input[type=range]::-moz-range-thumb {
+      width: 10px; height: 14px;
+      background: var(--white);
+      border: 1px solid var(--black);
+      border-radius: 0;
+      cursor: pointer;
+    }
+
+    /* Volume row */
+    .player-volume-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 10px;
+      font-size: 11px;
+    }
+    .player-volume-row input { flex: 1; }
+
+    /* Controls */
+    .player-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .mac-btn {
+      border: 1px solid var(--black);
+      background: var(--white);
+      font-family: inherit;
+      font-size: 14px;
+      padding: 4px 10px;
+      cursor: pointer;
+      box-shadow: 1px 1px 0 var(--black);
+      min-width: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+    .mac-btn:hover { background: var(--ltgray); }
+    .mac-btn:active {
+      background: var(--black);
+      color: var(--white);
+      box-shadow: none;
+      transform: translate(1px, 1px);
+    }
+    .mac-btn.play-btn {
+      padding: 4px 16px;
+      font-size: 16px;
+    }
+
+    /* Playlist */
+    .player-playlist-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--black);
+      padding-bottom: 3px;
+      margin-bottom: 4px;
+    }
+    .player-playlist {
+      max-height: 110px;
+      overflow-y: auto;
+      border: 1px solid var(--black);
+      background: var(--white);
+    }
+    /* Mac-style scrollbar */
+    .player-playlist::-webkit-scrollbar { width: 14px; }
+    .player-playlist::-webkit-scrollbar-track { background: var(--ltgray); border-left: 1px solid var(--black); }
+    .player-playlist::-webkit-scrollbar-thumb {
+      background: var(--white);
+      border: 1px solid var(--black);
+      box-shadow: inset 1px 1px 0 var(--black);
+    }
+
+    .playlist-item {
+      padding: 3px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      border-bottom: 1px solid var(--ltgray);
+    }
+    .playlist-item:last-child { border-bottom: none; }
+    .playlist-item:hover { background: var(--ltgray); }
+    .playlist-item.active {
+      background: var(--black);
+      color: var(--white);
+    }
+    .playlist-item .pl-num {
+      color: var(--midgray);
+      margin-right: 6px;
+      font-size: 10px;
+    }
+    .playlist-item.active .pl-num { color: var(--ltgray); }
+
+    /* ============================================================
+       DESKTOP ICONS (optional decoration)
+       ============================================================ */
+    .desktop-icon {
+      position: absolute;
+      top: 20px; right: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      cursor: default;
+      width: 60px;
+    }
+    .desktop-icon .icon-img {
+      width: 32px; height: 32px;
+      border: 1px solid transparent;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+    }
+    .desktop-icon .icon-label {
+      font-size: 11px;
+      text-align: center;
+      background: var(--desktop);
+      padding: 0 2px;
+      line-height: 1.3;
+    }
+    .desktop-icon:hover .icon-label {
+      background: var(--black);
+      color: var(--white);
+    }
+
+    /* Divider */
+    hr.mac-rule {
+      border: none;
+      border-top: 1px solid var(--black);
+      margin: 8px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ====================================================== MENU BAR -->
+  <div id="menu-bar">
+    <span class="menu-apple">&#63743;</span>
+    <span class="menu-item">File</span>
+    <span class="menu-item">Edit</span>
+    <span class="menu-item">View</span>
+    <span class="menu-item">Special</span>
+    <span id="menu-clock">12:00 PM</span>
+  </div>
+
+  <!-- ====================================================== DESKTOP -->
+  <div id="desktop">
+
+    <!-- Decorative disk icon -->
+    <div class="desktop-icon">
+      <div class="icon-img">💾</div>
+      <div class="icon-label">Macintosh HD</div>
+    </div>
+
+    <!-- ============================================================
+         MUSIC PLAYER WINDOW
+         ============================================================ -->
+    <div class="mac-window" id="player-window">
+      <div class="mac-titlebar" id="player-titlebar">
+        <div class="mac-close-box" title="Close"></div>
+        <div class="mac-title">🎵 SoundBox</div>
+        <div class="mac-zoom-box">+</div>
+      </div>
+
+      <div class="mac-body">
+
+        <!-- Album art -->
+        <div class="player-art" id="player-art">
+          <span class="art-placeholder" id="art-placeholder">🎵</span>
+          <img id="art-img" src="" alt="Album art" style="display:none; position:absolute; inset:0; width:100%; height:100%; object-fit:cover;">
+        </div>
+
+        <!-- Track info -->
+        <div class="player-info">
+          <div class="player-track-name" id="track-name">No track loaded</div>
+          <div class="player-artist" id="track-artist">—</div>
+          <div class="player-index" id="track-index">0 / 0</div>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="player-progress-wrap">
+          <div class="player-times">
+            <span id="time-current">0:00</span>
+            <span id="time-total">0:00</span>
+          </div>
+          <input type="range" id="seek-bar" min="0" max="100" value="0">
+        </div>
+
+        <!-- Volume -->
+        <div class="player-volume-row">
+          <span>🔈</span>
+          <input type="range" id="vol-bar" min="0" max="1" step="0.01" value="0.8">
+          <span>🔊</span>
+        </div>
+
+        <!-- Controls -->
+        <div class="player-controls">
+          <button class="mac-btn" id="btn-prev" title="Previous">&#9664;&#9664;</button>
+          <button class="mac-btn play-btn" id="btn-play" title="Play / Pause">&#9654;</button>
+          <button class="mac-btn" id="btn-next" title="Next">&#9654;&#9654;</button>
+          <button class="mac-btn" id="btn-loop" title="Loop">&#9654;&#x21BA;</button>
+        </div>
+
+        <hr class="mac-rule">
+
+        <!-- Playlist -->
+        <div class="player-playlist-label">Playlist</div>
+        <div class="player-playlist" id="playlist"></div>
+
+      </div><!-- /mac-body -->
+      <div class="mac-resize"></div>
+    </div><!-- /mac-window -->
+
+  </div><!-- /desktop -->
+
+  <audio id="audio-el"></audio>
+
+  <script>
+  // ====================================================================
+  //  ★  EDIT YOUR SONGS HERE  ★
+  //  Each entry needs:
+  //    file   : filename of the audio file (mp3, ogg, wav, etc.)
+  //             Place the file in the same folder as this HTML file.
+  //    title  : track name shown in the player
+  //    artist : artist / album shown below the title
+  //    art    : (optional) image filename for album art — leave '' to use
+  //             the musical note placeholder instead
+  // ====================================================================
+  const SONGS = [
+    { file: 'calm.m4a', title: 'Calm Meditation',   artist: 'Artist Name', art: '' },
+    { file: 'jazz-club.mp3', title: 'Jazzy Club',   artist: 'Artist Name', art: '' },
+    { file: 'jazz-cocktail.mp3', title: 'Jazzy Cocktail', artist: 'Artist Name', art: '' },
+    { file: 'jazz-coffee1.mp3', title: 'Jazzy Coffee 1', artist: 'Artist Name', art: '' },
+    { file: 'jazz-coffee2.mp3', title: 'Jazzy Coffee 2', artist: 'Artist Name', art: '' },
+    { file: 'jazz-coffee3.mp3', title: 'Jazzy Coffee 3', artist: 'Artist Name', art: '' },
+    { file: 'jazz-rainy.mp3', title: 'Jazzy Rain', artist: 'Artist Name', art: '' },
+    { file: 'jazz-restaurant.mp3', title: 'Jazzy Restaurant', artist: 'Artist Name', art: '' },
+    { file: 'jazz-study.mp3', title: 'Jazzy Study', artist: 'Artist Name', art: '' },
+    { file: 'jazz-sunny.mp3', title: 'Jazzy Sunny', artist: 'Artist Name', art: '' },
+    { file: 'simcity.m4a', title: 'Sim City', artist: 'Artist Name', art: '' },
+    { file: 'simsbuy.mp3', title: 'The Sims - Buy', artist: 'Artist Name', art: '' },
+    { file: 'simsloading.mp3', title: 'The Sims - Loading', artist: 'Artist Name', art: '' },
+    { file: 'simsnighborhood.mp3', title: 'The Sims - Neighborhood', artist: 'Artist Name', art: '' },
+    { file: 'simstheneighborhood.mp3', title: 'The Sims - The Neighborhood', artist: 'Artist Name', art: '' },
+    { file: 'trickle.m4a', title: 'Trickling', artist: 'Artist Name', art: '' },
+    { file: 'turbographx.m4a', title: 'Retro Game Theme', artist: 'Artist Name', art: '' },
+    { file: 'underwater.m4a', title: 'Underwater', artist: 'Artist Name', art: '' },
+    { file: 'waves.m4a', title: 'Waves', artist: 'Artist Name', art: '' },
+  ];
+  // ====================================================================
+
+  let currentIdx = 0;
+  let isPlaying  = false;
+  let isLooping = false;
+
+  const audio      = document.getElementById('audio-el');
+  const btnPlay    = document.getElementById('btn-play');
+  const btnPrev    = document.getElementById('btn-prev');
+  const btnNext    = document.getElementById('btn-next');
+  const seekBar    = document.getElementById('seek-bar');
+  const volBar     = document.getElementById('vol-bar');
+  const trackName  = document.getElementById('track-name');
+  const trackArtist= document.getElementById('track-artist');
+  const trackIndex = document.getElementById('track-index');
+  const timeCur    = document.getElementById('time-current');
+  const timeTotal  = document.getElementById('time-total');
+  const playlist   = document.getElementById('playlist');
+  const artImg     = document.getElementById('art-img');
+  const artPlaceholder = document.getElementById('art-placeholder');
+
+  // ── Build playlist ───────────────────────────────────────────────────
+  function buildPlaylist() {
+    playlist.innerHTML = '';
+    SONGS.forEach((song, i) => {
+      const item = document.createElement('div');
+      item.className = 'playlist-item' + (i === currentIdx ? ' active' : '');
+      item.innerHTML = `<span class="pl-num">${i + 1}.</span>${song.title} — <em>${song.artist}</em>`;
+      item.addEventListener('click', () => loadTrack(i, true));
+      playlist.appendChild(item);
+    });
+  }
+
+  // ── Load track ───────────────────────────────────────────────────────
+  function loadTrack(idx, autoplay) {
+    if (SONGS.length === 0) return;
+    currentIdx = ((idx % SONGS.length) + SONGS.length) % SONGS.length;
+    const song = SONGS[currentIdx];
+
+    audio.src = song.file;
+    audio.load();
+
+    trackName.textContent   = song.title;
+    trackArtist.textContent = song.artist;
+    trackIndex.textContent  = `${currentIdx + 1} / ${SONGS.length}`;
+
+    // Album art
+    if (song.art) {
+      artImg.src = song.art;
+      artImg.style.display = 'block';
+      artPlaceholder.style.display = 'none';
+    } else {
+      artImg.style.display = 'none';
+      artPlaceholder.style.display = '';
+    }
+
+    // Update playlist highlight
+    document.querySelectorAll('.playlist-item').forEach((el, i) => {
+      el.classList.toggle('active', i === currentIdx);
+    });
+
+    seekBar.value = 0;
+    timeCur.textContent = '0:00';
+    timeTotal.textContent = '0:00';
+
+    if (autoplay) {
+      audio.play().then(() => { isPlaying = true; updatePlayBtn(); }).catch(() => {});
+    } else {
+      isPlaying = false;
+      updatePlayBtn();
+    }
+  }
+
+  // ── Play / Pause ─────────────────────────────────────────────────────
+  function togglePlay() {
+    if (SONGS.length === 0) return;
+    if (audio.src === '' || audio.src === window.location.href) {
+      loadTrack(0, true); return;
+    }
+    if (isPlaying) {
+      audio.pause();
+      isPlaying = false;
+    } else {
+      audio.play().catch(() => {});
+      isPlaying = true;
+    }
+    updatePlayBtn();
+  }
+
+  function updatePlayBtn() {
+    btnPlay.innerHTML = isPlaying ? '&#9646;&#9646;' : '&#9654;';
+  }
+
+  // ── Seek ─────────────────────────────────────────────────────────────
+  audio.addEventListener('timeupdate', () => {
+    if (!audio.duration) return;
+    seekBar.value = (audio.currentTime / audio.duration) * 100;
+    timeCur.textContent   = fmt(audio.currentTime);
+    timeTotal.textContent = fmt(audio.duration);
+  });
+
+  seekBar.addEventListener('input', () => {
+    if (audio.duration) audio.currentTime = (seekBar.value / 100) * audio.duration;
+  });
+
+  // ── Volume ───────────────────────────────────────────────────────────
+  audio.volume = parseFloat(volBar.value);
+  volBar.addEventListener('input', () => { audio.volume = parseFloat(volBar.value); });
+
+  // ── Auto-advance ─────────────────────────────────────────────────────
+  audio.addEventListener('ended', () => loadTrack(currentIdx + 1, true));
+
+  audio.addEventListener('play',  () => { isPlaying = true;  updatePlayBtn(); });
+  audio.addEventListener('pause', () => { isPlaying = false; updatePlayBtn(); });
+
+  // ── Buttons ──────────────────────────────────────────────────────────
+  btnPlay.addEventListener('click', togglePlay);
+  btnPrev.addEventListener('click', () => loadTrack(currentIdx - 1, isPlaying));
+  btnNext.addEventListener('click', () => loadTrack(currentIdx + 1, isPlaying));
+  document.getElementById('btn-loop').addEventListener('click', () => {
+  isLooping = !isLooping;
+  audio.loop = isLooping;
+  document.getElementById('btn-loop').style.background = isLooping ? 'var(--black)' : '';
+  document.getElementById('btn-loop').style.color = isLooping ? 'var(--white)' : '';
+});
+
+  // ── Time formatter ───────────────────────────────────────────────────
+  function fmt(s) {
+    if (isNaN(s)) return '0:00';
+    const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+    return `${m}:${sec.toString().padStart(2, '0')}`;
+  }
+
+  // ── Clock ────────────────────────────────────────────────────────────
+  function updateClock() {
+    document.getElementById('menu-clock').textContent =
+      new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // ── Draggable window ─────────────────────────────────────────────────
+  (function () {
+    const win = document.getElementById('player-window');
+    const bar = document.getElementById('player-titlebar');
+    let dragging = false, ox = 0, oy = 0;
+
+    bar.addEventListener('mousedown', e => {
+      dragging = true;
+      const r = win.getBoundingClientRect();
+      // switch to absolute positioning for drag
+      win.style.position = 'absolute';
+      win.style.left = r.left + 'px';
+      win.style.top  = r.top  + 'px';
+      win.style.margin = '0';
+      ox = e.clientX - r.left;
+      oy = e.clientY - r.top;
+      e.preventDefault();
+    });
+    document.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      win.style.left = (e.clientX - ox) + 'px';
+      win.style.top  = (e.clientY - oy) + 'px';
+    });
+    document.addEventListener('mouseup', () => { dragging = false; });
+  })();
+
+  // ── Init ─────────────────────────────────────────────────────────────
+  buildPlaylist();
+  if (SONGS.length > 0) loadTrack(0, false);
+  </script>
+</body>
+</html>
